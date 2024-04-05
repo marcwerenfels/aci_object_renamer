@@ -1,0 +1,28 @@
+{% set outer_temp_list = [] %}
+{%- for outer_element in all_epg_to_bd.current -%}
+    {%- set outer_dict = dict() %}
+    {%- set x = outer_dict.__setitem__('Bridge_Domain', outer_element.fvBD.attributes.dn) -%}
+    {%- set x = outer_dict.__setitem__('Name', outer_element.fvBD.attributes.name) -%}
+    {%- set x = outer_dict.__setitem__('IP_Learning', outer_element.fvBD.attributes.ipLearning) -%}
+    {%- set x = outer_dict.__setitem__('ARP_Flooding', outer_element.fvBD.attributes.arpFlood) -%}
+    {%- set x = outer_dict.__setitem__('Limit_IP_Learning_to_Subnet', outer_element.fvBD.attributes.limitIpLearnToSubnets) -%}
+    {%- set x = outer_dict.__setitem__('Type', outer_element.fvBD.attributes.type) -%}
+    {%- set x = outer_dict.__setitem__('Unicast_Routing', outer_element.fvBD.attributes.unicastRoute) -%}
+    {%- set x = outer_dict.__setitem__('Unknown_Unicast_Action', outer_element.fvBD.attributes.unkMacUcastAct) -%}
+    {%- set x = outer_dict.__setitem__('Unknown_Multicast_Action', outer_element.fvBD.attributes.unkMcastAct) -%}
+    {%- set x = outer_dict.__setitem__('Multi_Destination_Action', outer_element.fvBD.attributes.multiDstPktAct) -%}
+        {%- set inner_temp_list = [] %}
+        {%- for inner_element in outer_element.fvBD.children -%}
+            {%- set inner_dict = dict() %}
+            {% if 'fvRsCtx' in inner_element %}
+                {%- set x = inner_dict.__setitem__('Context_VRF', inner_element.fvRsCtx.attributes.tDn) -%}
+                {%- set x = inner_dict.__setitem__('Name', inner_element.fvRsCtx.attributes.tnFvCtxName) -%}
+            {% endif %}
+            {{ inner_temp_list.append( inner_dict )}}
+        {%- endfor -%}
+    {%- set x = outer_dict.__setitem__('Context_Information', inner_temp_list) -%}
+    {{ outer_temp_list.append( outer_dict )}}
+{%- endfor -%}
+{
+"bridge_domains": {{ outer_temp_list | to_nice_json  }}
+}

@@ -1,0 +1,12 @@
+{% set outer_temp_list = [] %}
+{%- for outer_element in all_subnets.current -%}
+    {%- set outer_dict = dict() %}
+    {%- set x = outer_dict.__setitem__('Subnet_DN', outer_element.fvSubnet.attributes.dn) -%}
+    {%- set x = outer_dict.__setitem__('IP_subnet', outer_element.fvSubnet.attributes.ip) -%}
+    {%- set x = outer_dict.__setitem__('Scope', outer_element.fvSubnet.attributes.scope) -%}
+    {%- set x = outer_dict.__setitem__('Preferred', outer_element.fvSubnet.attributes.preferred) -%}
+    {{ outer_temp_list.append( outer_dict )}}
+{%- endfor -%}
+{
+"subnets": {{ outer_temp_list | to_nice_json  }}
+}

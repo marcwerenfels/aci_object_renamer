@@ -1,0 +1,213 @@
+---
+- name: ACI EPG collector
+  gather_facts: no
+  hosts: localhost
+
+  vars_prompt:
+    - name: apic_ip
+      prompt: "Enter APIC IP"
+      private: no
+    - name: user
+      prompt: "Enter user"
+      private: no
+    - name: pass
+      prompt: "Enter password"
+
+
+  tasks:
+    - name: define shared variables for ACI login
+      set_fact:
+        aci_login: &aci_login
+          host:     "{{apic_ip}}"
+          username: "{{user}}"
+          password: "{{pass}}"
+          validate_certs: no
+
+#APs
+    - name: Query all APs
+      aci_ap:
+        <<: *aci_login
+        state:  query
+      register: query_ap
+
+    - name: Raw APIC aps output with
+      copy:
+        content: "{{ query_ap | to_nice_json }}"
+        dest: raw/raw_aps.json
+
+    - name: Simplify APIC ANP output
+      template:
+        src: pars_anp.j2
+        dest: list/list_anp.json
+
+    - name: Include ANP list as vars
+      include_vars:
+        file: list/list_anp.json
+        name: list_anp
+#EPG
+    - name: Query all EPGs
+      aci_epg:
+        <<: *aci_login
+        state: query
+        ap: "{{item}}"
+      with_items: "{{list_anp.list_anp}}"
+      register: all_epgs_in_ap
+
+    - name: Raw APIC epg output with
+      copy:
+        content: "{{ all_epgs_in_ap | to_nice_json }}"
+        dest: raw/raw_epg.json
+
+    - name: Simplify APIC EPG output
+      template:
+        src: pars_epg.j2
+        dest: list/list_epg.json
+
+    - name: Include EPG list as vars
+      include_vars:
+        file: list/list_epg.json
+        name: list_epg
+
+#Static Paths
+    - name: Query all static paths to EPGs
+      aci_static_binding_to_epg:
+        <<: *aci_login
+        state: query
+        epg: "{{item.1.EPG_NAME}}"
+      with_subelements:
+        - "{{list_epg.list_epg_in_ap}}"
+        - EPG_LIST
+      register: all_static_bindings_in_epg
+
+    - name: Raw APIC static paths output with
+      copy:
+        content: "{{ all_static_bindings_in_epg | to_nice_json }}"
+        dest: raw/raw_static_paths.json
+
+    - name: Simplify APIC static paths output with
+      template:
+        src: pars_static_paths.j2
+        dest: list/list_static_paths.json
+
+#Domains
+    - name: Query all EPGs to Domains
+      aci_epg_to_domain:
+        <<: *aci_login
+        state: query
+        epg: "{{item.1.EPG_NAME}}"
+      with_subelements:
+        - "{{list_epg.list_epg_in_ap}}"
+        - EPG_LIST
+      register: all_domains_in_epg
+
+    - name: Raw APIC domains output with
+      copy:
+        content: "{{ all_domains_in_epg | to_nice_json }}"
+        dest: raw/raw_domains.json
+
+    - name: Simplify APIC domains output with
+      template:
+        src: pars_domains.j2
+        dest: list/list_domains.json
+
+#Contracts Provider
+    - name: Query all EPGs to Contracts Provider
+      aci_epg_to_contract:
+        <<: *aci_login
+        state: query
+        contract_type: provider
+        epg: "{{item.1.EPG_NAME}}"
+      with_subelements:
+        - "{{list_epg.list_epg_in_ap}}"
+        - EPG_LIST
+      register: all_contracts_provider_in_epg
+
+    - name: Raw APIC contracts output with
+      copy:
+        content: "{{ all_contracts_provider_in_epg | to_nice_json }}"
+        dest: raw/raw_contracts_provider.json
+
+    - name: Simplify APIC privder contract output with
+      template:
+        src: pars_contracts_provider.j2
+        dest: list/list_contracts_provider.json
+
+#Contracts Consumer
+    - name: Query all EPGs to Contracts Consumer
+      aci_epg_to_contract:
+        <<: *aci_login
+        state: query
+        contract_type: consumer
+        epg: "{{item.1.EPG_NAME}}"
+      with_subelements:
+        - "{{list_epg.list_epg_in_ap}}"
+        - EPG_LIST
+      register: all_contracts_consumer_in_epg
+
+    - name: Raw APIC contracts output with
+      copy:
+        content: "{{ all_contracts_consumer_in_epg | to_nice_json }}"
+        dest: raw/raw_contracts_consumer.json
+
+    - name: Simplify APIC consumer contract output with
+      template:
+        src: pars_contracts_consumer.j2
+        dest: list/list_contracts_consumer.json
+
+#Master Contracts
+    - name: Query all EPGs to contract master relationships
+      cisco.aci.aci_epg_to_contract_master:
+        <<: *aci_login
+        state: query
+        tenant: Labor
+        ap: "{{item.0.AP}}"
+        epg: "{{item.1.EPG_NAME}}"
+      with_subelements:
+        - "{{list_epg.list_epg_in_ap}}"
+        - EPG_LIST
+      register: all_mastercontracts_in_epg
+
+    - name: Raw APIC master contracts output with
+      copy:
+        content: "{{ all_mastercontracts_in_epg | to_nice_json }}"
+        dest: raw/raw_master_contracts.json
+
+#EPGs to BDs
+    - name: Query all BDs
+      aci_bd:
+        <<: *aci_login
+        state: query
+      register: all_epg_to_bd
+
+    - name: Raw APIC BDs output with
+      copy:
+        content: "{{ all_epg_to_bd | to_nice_json }}"
+        dest: raw/raw_bds.json
+
+    - name: Simplify APIC BDs output with
+      template:
+        src: pars_bds.j2
+        dest: list/list_bds.json
+
+#EPGs to BD subnets
+    - name: Query all BD subnets
+      aci_bd_subnet:
+        <<: *aci_login
+        state: query
+      register: all_subnets
+
+    - name: Raw APIC BD subnets output with
+      copy:
+        content: "{{ all_subnets | to_nice_json }}"
+        dest: raw/raw_subnets.json
+
+    - name: Simplify APIC BDs output with
+      template:
+        src: pars_subnets.j2
+        dest: list/list_subnets.json
+
+#Structure results to one file
+#    - name: Combine results of collected information to one file
+#      template:
+#        src: structure.j2
+#        dest: list/list_structure.json

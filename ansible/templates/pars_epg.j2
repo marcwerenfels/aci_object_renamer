@@ -1,0 +1,31 @@
+{% set temp_list = [] %}
+{%- for anp_element in all_epgs_in_ap.results -%}
+    {%- set my_dict = dict() %}
+    {%- set temp_epg_list = [] %}
+    {%- set x = my_dict.__setitem__('AP', anp_element.item) -%}
+
+    {%- if 'children' not in anp_element.current[0].fvAp -%}
+        {%- set x = my_dict.__setitem__('EPG_LIST', temp_epg_list) -%}
+    {%- endif -%}
+
+    {%- if 'children' in anp_element.current[0].fvAp -%}
+        {%- set temp_epg_list = [] %}
+        {%- for epg in anp_element.current[0].fvAp.children -%}
+            {%- set epg_dict = dict() %}
+            {%- set x = epg_dict.__setitem__('EPG_NAME', epg.fvAEPg.attributes.name) -%}
+            {%- if 'tnFvBDName' in epg.fvAEPg.children[0].fvRsBd.attributes -%}
+                {%- set x = epg_dict.__setitem__('BD_NAME', epg.fvAEPg.children[0].fvRsBd.attributes.tnFvBDName) -%}
+            {%- elif 'tnFvBDName' not in epg.fvAEPg.children[0].fvRsBd.attributes -%}
+                {%- set x = epg_dict.__setitem__('BD_NAME', 'not assigned') -%}
+            {%- endif -%}
+            {{ temp_epg_list.append( epg_dict )}}
+        {%- endfor -%}
+        {%- set x = my_dict.__setitem__('EPG_LIST', temp_epg_list) -%}
+    {%- endif -%}
+    
+    {{ temp_list.append( my_dict )}}
+{%- endfor -%}
+
+{
+"list_epg_in_ap": {{ temp_list | to_nice_json  }}
+}

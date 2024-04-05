@@ -1,0 +1,21 @@
+{% set outer_temp_list = [] %}
+{%- for outer_element in all_domains_in_epg.results -%}
+    {%- set outer_dict = dict() %}
+    {%- set x = outer_dict.__setitem__('Mentioned_EPG', outer_element.item[1].EPG_NAME) -%}
+        {%- set inner_temp_list = [] %}
+        {%- for inner_element in outer_element.current -%}
+            {%- set inner_dict = dict() %}
+            {%- set x = inner_dict.__setitem__('Associated_EPG_Domain', inner_element.fvRsDomAtt.attributes.dn) -%}
+            {%- set x = inner_dict.__setitem__('Deployment', inner_element.fvRsDomAtt.attributes.instrImedcy) -%}
+            {%- set x = inner_dict.__setitem__('Resoolution', inner_element.fvRsDomAtt.attributes.resImedcy) -%}
+            {%- set x = inner_dict.__setitem__('Type', inner_element.fvRsDomAtt.attributes.tCl) -%}
+            {%- set x = inner_dict.__setitem__('Topology_Object', inner_element.fvRsDomAtt.attributes.tDn) -%}
+            {{ inner_temp_list.append( inner_dict )}}
+        {%- endfor -%}
+    {%- set x = outer_dict.__setitem__('List'+loop.index|string, inner_temp_list) -%}
+    {{ outer_temp_list.append( outer_dict )}}
+{%- endfor -%}
+
+{
+"domains": {{ outer_temp_list | to_nice_json  }}
+}

@@ -1,0 +1,19 @@
+{
+"list_epg": [
+    {
+        "AP": "default",
+        "EPG_LIST": []
+    },
+    {
+        "AP": "LAB",
+        "EPG_LIST": [
+            {
+                "EPG_NAME": "0001"
+            },
+            {
+                "EPG_NAME": "0002"
+            }
+        ]
+    }
+]
+}

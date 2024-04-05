@@ -1,0 +1,40 @@
+{
+  "EPG_LIST": [
+    {
+      "EPG1": [
+        {
+          "NAME_new": "EPG1_new",
+          "NAME_current": "EPG1_old",
+          "AP": "asdf",
+          "BD": [
+            {
+              "name": "BD-unknown",
+              "subnet": "10.0.0.0/24"
+            }
+          ],
+          "static_paths": [
+            "path1",
+            "path2"
+          ],
+          "domains": [
+            "domain1",
+            "domain2"
+          ],
+          "contracts": [
+            {
+              "consumer": [
+                "contr_cons1",
+                "contr_cons2"
+              ],
+              "provider": [
+                "prov_cons1",
+                "prov_cons1"
+              ],
+              "master": "masterEPG"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

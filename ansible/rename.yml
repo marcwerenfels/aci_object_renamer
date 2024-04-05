@@ -1,0 +1,46 @@
+---
+- name: ACI EPG rename
+  gather_facts: no
+  hosts: localhost
+
+#  vars_prompt:
+#    - name: apic_ip
+#      prompt: "Enter APIC IP"
+#      private: no
+#    - name: user
+#      prompt: "Enter user"
+#      private: no
+#    - name: pass
+#      prompt: "Enter password"
+#
+#
+  tasks:
+#    - name: define shared variables for ACI login
+#      set_fact:
+#        aci_login: &aci_login
+#          host:     "{{apic_ip}}"
+#          username: "{{user}}"
+#          password: "{{pass}}"
+#          validate_certs: no
+
+#tasks
+#file with objects to rename
+#search if current object exists
+#if yes delete this object and create the new one with the former parameter
+    - name: Include EPG list as vars
+      include_vars:
+        file: list/list_epg
+        name: list_epg
+
+    - name: Include EPG objects to rename as vars
+      include_vars:
+        file: renaming_structure.json
+        name: renaming_structure
+
+    - name:
+      lineinfile:
+        dest: list/list_epg
+        line: renaming_structure.renaming_structure[0].EPG_LIST[0].EPG_NAME_current
+      check_mode: yes
+      register: presence
+      failed_when: presence.changed

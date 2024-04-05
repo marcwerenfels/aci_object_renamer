@@ -1,0 +1,9 @@
+{% set temp_list = [] %}
+{%- for anp_element in query_ap.current -%}
+    {{ temp_list.append(anp_element.fvAp.attributes.name ) }}
+{%- endfor -%}
+
+
+{
+"list_anp": {{ temp_list | to_nice_json  }}
+}
